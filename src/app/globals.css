@@ -1,0 +1,174 @@
+@import "tailwindcss";
+
+:root {
+  --bg-canvas: #f6faf7;
+  --bg-surface: #ffffff;
+  --bg-soft-mint: #ebf7f0;
+  --bg-sage: #dcece2;
+  --forest-900: #0a2e23;
+  --forest-800: #0e4434;
+  --forest-700: #135a45;
+  --emerald-600: #059669;
+  --emerald-500: #10b981;
+  --mint-300: #6ee7b7;
+  --ink-primary: #0f241d;
+  --ink-secondary: #466356;
+  --ink-muted: #6c877a;
+  --border-sage: #d7e7dd;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background-color: var(--bg-canvas);
+  color: var(--ink-primary);
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+.font-display {
+  font-family: var(--font-jakarta), system-ui, -apple-system, sans-serif;
+}
+
+.font-mono-id {
+  font-family: var(--font-mono), ui-monospace, SFMono-Regular, monospace;
+}
+
+/* Nature-inspired organic ambient mesh */
+.bg-nature-mesh {
+  background-color: #f6faf7;
+  background-image:
+    radial-gradient(at 8% 12%, rgba(16, 185, 129, 0.12) 0px, transparent 48%),
+    radial-gradient(at 92% 10%, rgba(167, 243, 208, 0.25) 0px, transparent 44%),
+    radial-gradient(at 80% 88%, rgba(5, 150, 105, 0.08) 0px, transparent 52%),
+    radial-gradient(at 15% 85%, rgba(209, 250, 229, 0.35) 0px, transparent 45%);
+}
+
+.glass-surface {
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(205, 228, 214, 0.85);
+  box-shadow:
+    0 1px 2px rgba(15, 76, 58, 0.04),
+    0 12px 32px -12px rgba(15, 76, 58, 0.08);
+}
+
+.emerald-gradient {
+  background: linear-gradient(135deg, #0d4a38 0%, #059669 100%);
+}
+
+/* Smooth pausable circular orbital motion for Home Page 3D dial */
+@keyframes hospitalpro-orbit-cw {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes hospitalpro-orbit-ccw {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.hospitalpro-orbit-cw {
+  animation: hospitalpro-orbit-cw 36s linear infinite;
+}
+
+.hospitalpro-orbit-ccw {
+  animation: hospitalpro-orbit-ccw 36s linear infinite;
+}
+
+/* Lightweight GPU-composited subtle floating sway for portal windows */
+@keyframes hospitalpro-card-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate3d(0, calc(var(--hp-float-y, 5px) * -1), 0)
+      rotate(calc(var(--hp-float-rot, 0.35deg) * -1));
+  }
+  66% {
+    transform: translate3d(0, calc(var(--hp-float-y, 5px) * -0.4), 0)
+      rotate(calc(var(--hp-float-rot, 0.35deg) * 0.75));
+  }
+}
+
+.hospitalpro-card-float {
+  animation: hospitalpro-card-float var(--hp-float-dur, 6.6s) ease-in-out
+    var(--hp-float-delay, 0s) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hospitalpro-orbit-cw,
+  .hospitalpro-orbit-ccw,
+  .hospitalpro-card-float {
+    animation: none;
+  }
+}
+
+/* Custom subtle scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-track {
+  background: #eff6f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #b9d6c5;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8ebaa0;
+}
+
+/* Dedicated A4 Print Styling */
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-sheet {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    background: #ffffff !important;
+  }
+
+  .print-avoid-break {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
