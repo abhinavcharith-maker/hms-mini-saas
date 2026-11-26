@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
   ArrowRightLeft,
@@ -95,6 +96,19 @@ export default function IpManagementPage() {
   const [doctors, setDoctors] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<"beds" | "active" | "history">("beds");
+  const [tabDirection, setTabDirection] = useState<1 | -1>(1);
+
+  const switchTab = (next: "beds" | "active" | "history") => {
+    const order: Array<"beds" | "active" | "history"> = [
+      "beds",
+      "active",
+      "history",
+    ];
+    if (next !== tab) {
+      setTabDirection(order.indexOf(next) > order.indexOf(tab) ? 1 : -1);
+      setTab(next);
+    }
+  };
 
   // Modals
   const [bedModalOpen, setBedModalOpen] = useState(false);
@@ -495,7 +509,7 @@ export default function IpManagementPage() {
             <BubblyButton
               variant="danger"
               className="px-3 py-1.5 text-xs shrink-0"
-              onClick={() => setTab("active")}
+              onClick={() => switchTab("active")}
             >
               Review & Extend Stay
             </BubblyButton>
@@ -505,25 +519,37 @@ export default function IpManagementPage() {
 
       {/* Bed Status Legend & Tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="inline-flex rounded-2xl border border-[#cfe2d6] bg-white p-1">
-          {[
-            { id: "beds", label: `Bed Map (${beds.length})` },
-            { id: "active", label: `Current Inpatients (${activeAdmissions.length})` },
-            { id: "history", label: `Discharge Archive (${dischargedAdmissions.length})` },
-          ].map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id as "beds" | "active" | "history")}
-              className={`rounded-xl px-4 py-2 text-xs font-semibold transition-colors cursor-pointer ${
-                tab === t.id
-                  ? "bg-[#dff4e8] text-[#0d4a38]"
-                  : "text-[#466356] hover:text-[#0f241d]"
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+        <div className="inline-flex flex-wrap gap-1 rounded-2xl border border-[#cfe2d6] bg-white p-1 shadow-xs">
+          {(
+            [
+              { id: "beds", label: `Bed Map (${beds.length})` },
+              { id: "active", label: `Current Inpatients (${activeAdmissions.length})` },
+              { id: "history", label: `Discharge Archive (${dischargedAdmissions.length})` },
+            ] as const
+          ).map((t) => {
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => switchTab(t.id)}
+                className={`relative rounded-xl px-4 py-2 text-xs font-semibold transition-colors cursor-pointer ${
+                  active
+                    ? "text-[#0d4a38]"
+                    : "text-[#466356] hover:text-[#0f241d]"
+                }`}
+              >
+                {active ? (
+                  <motion.span
+                    layoutId="ip-mgmt-tab-pill"
+                    transition={{ type: "spring", stiffness: 520, damping: 38 }}
+                    className="absolute inset-0 rounded-xl border border-emerald-300/70 bg-[#dff4e8] shadow-xs"
+                  />
+                ) : null}
+                <span className="relative z-10">{t.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
@@ -544,7 +570,16 @@ export default function IpManagementPage() {
 
       {loading ? (
         <SkeletonBox className="h-72" />
-      ) : tab === "beds" ? (
+      ) : (
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, x: tabDirection * 20, y: 6 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            exit={{ opacity: 0, x: tabDirection * -14, y: -4 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {tab === "beds" ? (
         beds.length === 0 ? (
           <EmptyState
             icon={<BedDouble className="h-6 w-6" />}
@@ -923,6 +958,9 @@ export default function IpManagementPage() {
             </div>
           )}
         </SpringCard>
+            )}
+          </motion.div>
+        </AnimatePresence>
       )}
 
       {/* Add/Edit Bed Modal */}

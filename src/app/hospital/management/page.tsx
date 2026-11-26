@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   FlaskConical,
   KeyRound,
@@ -79,11 +80,30 @@ type ManagementTab =
   | "pharmacies"
   | "labs";
 
+const MANAGEMENT_TAB_ORDER: ManagementTab[] = [
+  "doctors",
+  "receptionists",
+  "pharmacies",
+  "labs",
+];
+
 export default function HospitalManagementPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [forbidden, setForbidden] = useState(false);
   const [tab, setTab] = useState<ManagementTab>("doctors");
+  const [tabDirection, setTabDirection] = useState<1 | -1>(1);
+
+  const switchTab = (next: ManagementTab) => {
+    if (next !== tab) {
+      setTabDirection(
+        MANAGEMENT_TAB_ORDER.indexOf(next) > MANAGEMENT_TAB_ORDER.indexOf(tab)
+          ? 1
+          : -1
+      );
+      setTab(next);
+    }
+  };
   const [currentUserId, setCurrentUserId] = useState<string>("");
   const [consultancyEnabled, setConsultancyEnabled] = useState<boolean>(true);
   const [busy, setBusy] = useState(false);
@@ -472,7 +492,7 @@ export default function HospitalManagementPage() {
       </div>
 
       {/* Management Sub-Tabs */}
-      <div className="flex flex-wrap gap-2 rounded-2xl border border-[#cfe2d6] bg-white p-1.5 w-fit">
+      <div className="flex flex-wrap gap-1.5 rounded-2xl border border-[#cfe2d6] bg-white p-1.5 w-fit shadow-xs">
         {[
           {
             id: "doctors" as const,
@@ -494,26 +514,47 @@ export default function HospitalManagementPage() {
             label: `Laboratory Owners (${labs.length})`,
             icon: <FlaskConical className="h-3.5 w-3.5" />,
           },
-        ].map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            onClick={() => setTab(t.id)}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-colors cursor-pointer ${
-              tab === t.id
-                ? "bg-[#dff4e8] text-[#0d4a38]"
-                : "text-[#466356] hover:text-[#0f241d]"
-            }`}
-          >
-            {t.icon}
-            {t.label}
-          </button>
-        ))}
+        ].map((t) => {
+          const active = tab === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => switchTab(t.id)}
+              className={`relative inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-colors cursor-pointer ${
+                active
+                  ? "text-[#0d4a38]"
+                  : "text-[#466356] hover:text-[#0f241d]"
+              }`}
+            >
+              {active ? (
+                <motion.span
+                  layoutId="hospital-mgmt-tab-pill"
+                  transition={{ type: "spring", stiffness: 520, damping: 38 }}
+                  className="absolute inset-0 rounded-xl border border-emerald-300/70 bg-[#dff4e8] shadow-xs"
+                />
+              ) : null}
+              <span className="relative z-10 inline-flex items-center gap-2">
+                {t.icon}
+                {t.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {loading ? (
         <SkeletonBox className="h-72" />
-      ) : tab === "doctors" ? (
+      ) : (
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, x: tabDirection * 20, y: 6 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
+            exit={{ opacity: 0, x: tabDirection * -14, y: -4 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {tab === "doctors" ? (
         <SpringCard className="p-6 space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
@@ -941,6 +982,9 @@ export default function HospitalManagementPage() {
             </div>
           )}
         </SpringCard>
+            )}
+          </motion.div>
+        </AnimatePresence>
       )}
 
       {/* Doctor Add / Edit Modal */}

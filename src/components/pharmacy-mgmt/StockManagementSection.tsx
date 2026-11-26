@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
   Barcode,
@@ -72,6 +72,14 @@ function formatPriceInput(n: number): string {
 
 const STOCK_PAGE_SIZE = 100;
 
+const STOCK_FILTER_ORDER: StockFilter[] = [
+  "all",
+  "low_stock",
+  "out_of_stock",
+  "expiring_soon",
+  "expired",
+];
+
 export function StockManagementSection({
   medicines,
   filter,
@@ -94,6 +102,7 @@ export function StockManagementSection({
   const { toast } = useToast();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [filterDirection, setFilterDirection] = useState<1 | -1>(1);
   const [busy, setBusy] = useState(false);
 
   // Upload Bill input triggers parent workspace handler so upload survives tab switches!
@@ -710,6 +719,11 @@ export function StockManagementSection({
                     key={f.id}
                     type="button"
                     onClick={() => {
+                      const prevIdx = STOCK_FILTER_ORDER.indexOf(filter);
+                      const nextIdx = STOCK_FILTER_ORDER.indexOf(f.id);
+                      if (nextIdx !== prevIdx) {
+                        setFilterDirection(nextIdx > prevIdx ? 1 : -1);
+                      }
                       onFilterChange(f.id);
                       setPage(1);
                     }}
@@ -780,47 +794,49 @@ export function StockManagementSection({
         </div>
       </SpringCard>
 
-      {/* Minimal, Ultra-Clean Horizontal Medicine Strips: ONLY Medicine Name, Selling Price, Quantity + Add, Edit, Delete */}
-      {medicines.length === 0 ? (
-        <SpringCard className="p-6">
-          <EmptyState
-            icon={<Boxes className="h-5 w-5" />}
-            title="No Medicines In Inventory"
-            description="Add your first medicine profile or upload a supplier bill to populate stock."
-            action={
-              <BubblyButton onClick={onJumpToAdd}>
-                <Plus className="h-4 w-4" />
-                Add Medicine
-              </BubblyButton>
-            }
-          />
-        </SpringCard>
-      ) : isBatchOnlyView ? (
-        visibleBatches.length === 0 ? (
-          <SpringCard className="p-6">
-            <EmptyState
-              icon={<Search className="h-5 w-5" />}
-              title={
-                filter === "expired"
-                  ? "No Expired Batches"
-                  : "No Expiring Soon Batches"
-              }
-              description={
-                filter === "expired"
-                  ? "None of your active medicine batches are expired."
-                  : "No active batches are expiring within the 3-month watch window."
-              }
-            />
-          </SpringCard>
-        ) : (
-          <motion.div
-            key={`${filter}-p${currentPage}`}
-            initial={{ opacity: 0.25, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.14, ease: "easeOut" }}
-            className="space-y-2.5"
-          >
-            {paginatedBatches.map(({ medicine: med, batch }) => {
+      {/* Minimal, Ultra-Clean Horizontal Medicine Strips with Fluid Directional Filter Transitions */}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={`${filter}-p${currentPage}`}
+          initial={{ opacity: 0, x: filterDirection * 18, y: 5 }}
+          animate={{ opacity: 1, x: 0, y: 0 }}
+          exit={{ opacity: 0, x: filterDirection * -14, y: -3 }}
+          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {medicines.length === 0 ? (
+            <SpringCard className="p-6">
+              <EmptyState
+                icon={<Boxes className="h-5 w-5" />}
+                title="No Medicines In Inventory"
+                description="Add your first medicine profile or upload a supplier bill to populate stock."
+                action={
+                  <BubblyButton onClick={onJumpToAdd}>
+                    <Plus className="h-4 w-4" />
+                    Add Medicine
+                  </BubblyButton>
+                }
+              />
+            </SpringCard>
+          ) : isBatchOnlyView ? (
+            visibleBatches.length === 0 ? (
+              <SpringCard className="p-6">
+                <EmptyState
+                  icon={<Search className="h-5 w-5" />}
+                  title={
+                    filter === "expired"
+                      ? "No Expired Batches"
+                      : "No Expiring Soon Batches"
+                  }
+                  description={
+                    filter === "expired"
+                      ? "None of your active medicine batches are expired."
+                      : "No active batches are expiring within the 3-month watch window."
+                  }
+                />
+              </SpringCard>
+            ) : (
+              <div className="space-y-2.5">
+                {paginatedBatches.map(({ medicine: med, batch }) => {
               const isExp = filter === "expired";
               return (
                 <div
@@ -916,25 +932,19 @@ export function StockManagementSection({
                 </div>
               );
             })}
-          </motion.div>
-        )
-      ) : visibleMedicines.length === 0 ? (
-        <SpringCard className="p-6">
-          <EmptyState
-            icon={<Search className="h-5 w-5" />}
-            title="No Matching Medicines"
-            description="Adjust your search keyword or status filter to view medicines."
-          />
-        </SpringCard>
-      ) : (
-        <motion.div
-          key={`${filter}-p${currentPage}`}
-          initial={{ opacity: 0.25, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.14, ease: "easeOut" }}
-          className="space-y-2.5"
-        >
-          {paginatedMedicines.map((med) => (
+              </div>
+            )
+          ) : visibleMedicines.length === 0 ? (
+            <SpringCard className="p-6">
+              <EmptyState
+                icon={<Search className="h-5 w-5" />}
+                title="No Matching Medicines"
+                description="Adjust your search keyword or status filter to view medicines."
+              />
+            </SpringCard>
+          ) : (
+            <div className="space-y-2.5">
+              {paginatedMedicines.map((med) => (
             <div
               key={med.id}
               className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-[#cfe2d6] bg-white px-5 py-3.5 shadow-xs transition-all duration-150 hover:border-emerald-400 hover:shadow-md hover:shadow-emerald-950/5"
@@ -1028,9 +1038,11 @@ export function StockManagementSection({
                   </div>
                 </div>
               </div>
-          ))}
+              ))}
+            </div>
+          )}
         </motion.div>
-      )}
+      </AnimatePresence>
 
       {/* Stock Pagination Bar (100 items per page) */}
       {totalMatchingCount > 0 ? (

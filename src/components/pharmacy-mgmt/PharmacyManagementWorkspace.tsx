@@ -333,60 +333,93 @@ export function PharmacyManagementWorkspace() {
           <SkeletonBox className="h-80" />
         </div>
       ) : (
-        /* Keep every operational section mounted (hidden when inactive) so cart items, forms, and in-progress bill reviews NEVER disappear when switching tabs! */
-        <div>
-          <div className={tab === "sell" ? "block" : "hidden"}>
-            <SellMedicineSection
-              medicines={medicines}
-              doctors={bootstrap?.doctors ?? []}
-              pharmacyName={bootstrap?.pharmacyName || "Pharmacy"}
-              refreshKey={refreshKey}
-              isActive={tab === "sell"}
-              actionRef={sellActionRef}
-              onSaleCompleted={handleInventoryMutated}
-            />
-          </div>
+        /* Keep every operational section mounted (hidden when inactive) so cart items, forms, and in-progress bill reviews NEVER disappear when switching tabs — with directional fluid transitions! */
+        (() => {
+          const tabOrder: PharmacyMgmtTab[] = [
+            "sell",
+            "add",
+            "stock",
+            "analytics",
+            "review_scan",
+          ];
+          const activeIdx = tabOrder.indexOf(tab);
+          const panelMotion = (panelId: PharmacyMgmtTab) => {
+            const panelIdx = tabOrder.indexOf(panelId);
+            const isActive = tab === panelId;
+            return {
+              initial: false as const,
+              animate: isActive
+                ? { opacity: 1, x: 0, y: 0, scale: 1 }
+                : {
+                    opacity: 0,
+                    x: panelIdx > activeIdx ? 18 : -18,
+                    y: 6,
+                    scale: 0.992,
+                  },
+              transition: {
+                duration: 0.26,
+                ease: [0.22, 1, 0.36, 1] as const,
+              },
+              className: isActive ? "block" : "hidden",
+            };
+          };
 
-          <div className={tab === "add" ? "block" : "hidden"}>
-            <AddMedicineSection
-              existingMedicines={medicines}
-              isActive={tab === "add"}
-              billQuota={billQuota}
-              uploadingBill={uploadingBill}
-              onUploadBillFile={handleUploadBillFile}
-              onSaved={handleInventoryMutated}
-            />
-          </div>
+          return (
+            <div>
+              <motion.div {...panelMotion("sell")}>
+                <SellMedicineSection
+                  medicines={medicines}
+                  doctors={bootstrap?.doctors ?? []}
+                  pharmacyName={bootstrap?.pharmacyName || "Pharmacy"}
+                  refreshKey={refreshKey}
+                  isActive={tab === "sell"}
+                  actionRef={sellActionRef}
+                  onSaleCompleted={handleInventoryMutated}
+                />
+              </motion.div>
 
-          <div className={tab === "stock" ? "block" : "hidden"}>
-            <StockManagementSection
-              medicines={medicines}
-              filter={stockFilterOverride}
-              onFilterChange={setStockFilterOverride}
-              billQuota={billQuota}
-              uploadingBill={uploadingBill}
-              onUploadBillFile={handleUploadBillFile}
-              onChanged={handleInventoryMutated}
-              onJumpToAdd={() => setTab("add")}
-            />
-          </div>
+              <motion.div {...panelMotion("add")}>
+                <AddMedicineSection
+                  existingMedicines={medicines}
+                  isActive={tab === "add"}
+                  billQuota={billQuota}
+                  uploadingBill={uploadingBill}
+                  onUploadBillFile={handleUploadBillFile}
+                  onSaved={handleInventoryMutated}
+                />
+              </motion.div>
 
-          <div className={tab === "analytics" ? "block" : "hidden"}>
-            <PharmacyAnalyticsSection refreshKey={refreshKey} />
-          </div>
+              <motion.div {...panelMotion("stock")}>
+                <StockManagementSection
+                  medicines={medicines}
+                  filter={stockFilterOverride}
+                  onFilterChange={setStockFilterOverride}
+                  billQuota={billQuota}
+                  uploadingBill={uploadingBill}
+                  onUploadBillFile={handleUploadBillFile}
+                  onChanged={handleInventoryMutated}
+                  onJumpToAdd={() => setTab("add")}
+                />
+              </motion.div>
 
-          <div className={tab === "review_scan" ? "block" : "hidden"}>
-            <BillScanReviewPanel
-              session={scanSession}
-              medicines={medicines}
-              billQuota={billQuota}
-              uploadingBill={uploadingBill}
-              onUploadBillFile={handleUploadBillFile}
-              onSessionChange={setScanSession}
-              onInventoryMutated={handleInventoryMutated}
-            />
-          </div>
-        </div>
+              <motion.div {...panelMotion("analytics")}>
+                <PharmacyAnalyticsSection refreshKey={refreshKey} />
+              </motion.div>
+
+              <motion.div {...panelMotion("review_scan")}>
+                <BillScanReviewPanel
+                  session={scanSession}
+                  medicines={medicines}
+                  billQuota={billQuota}
+                  uploadingBill={uploadingBill}
+                  onUploadBillFile={handleUploadBillFile}
+                  onSessionChange={setScanSession}
+                  onInventoryMutated={handleInventoryMutated}
+                />
+              </motion.div>
+            </div>
+          );
+        })()
       )}
     </div>
   );
