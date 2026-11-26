@@ -223,9 +223,6 @@ export default function SuperAdminMaintenancePage() {
         <h1 className="font-display text-2xl font-extrabold text-[#0f241d]">
           Platform Maintenance Control
         </h1>
-        <p className="mt-1 text-sm text-[#466356]">
-          Schedule timed maintenance breaks and broadcast the reason across every portal login except Super Admin.
-        </p>
       </div>
 
       {loading ? (

@@ -17,6 +17,7 @@ import {
   StatCard,
   StatusBadge,
 } from "@/components/ui/MotionPrimitives";
+import { DEFAULT_PAGE_SIZE, PaginationBar } from "@/components/ui/PaginationBar";
 import { useToast } from "@/components/providers/AppProviders";
 import { formatAccurateDateTime } from "@/lib/datetime";
 
@@ -51,6 +52,7 @@ export default function LaboratoryPortalPage() {
   const [completedFrom, setCompletedFrom] = useState("");
   const [completedTo, setCompletedTo] = useState("");
   const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
 
   const [selected, setSelected] = useState<LabReferral | null>(null);
   const [enteredAmount, setEnteredAmount] = useState("");
@@ -119,15 +121,19 @@ export default function LaboratoryPortalPage() {
     }
   };
 
+  const totalPages = Math.max(1, Math.ceil(referrals.length / DEFAULT_PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const paginatedReferrals = referrals.slice(
+    (safePage - 1) * DEFAULT_PAGE_SIZE,
+    safePage * DEFAULT_PAGE_SIZE
+  );
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-extrabold text-[#0f241d]">
           {labName || "Laboratory Referral Portal"}
         </h1>
-        <p className="mt-1 text-sm text-[#466356]">
-          Showing diagnostic referrals assigned by <strong>{hospitalName}</strong>. Confirm fulfilment upon completion.
-        </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -163,7 +169,10 @@ export default function LaboratoryPortalPage() {
               <button
                 key={f.label}
                 type="button"
-                onClick={() => setStatusFilter(f.val)}
+                onClick={() => {
+                  setStatusFilter(f.val);
+                  setPage(1);
+                }}
                 className={`rounded-xl border px-3.5 py-2 text-xs font-semibold cursor-pointer ${
                   statusFilter === f.val
                     ? "border-emerald-500 bg-[#dff4e8] text-[#0d4a38]"
@@ -181,7 +190,10 @@ export default function LaboratoryPortalPage() {
                   <input
                     type="date"
                     value={completedFrom}
-                    onChange={(e) => setCompletedFrom(e.target.value)}
+                    onChange={(e) => {
+                      setCompletedFrom(e.target.value);
+                      setPage(1);
+                    }}
                     className="ml-1.5 rounded-xl border border-[#cfe2d6] bg-white px-2.5 py-1.5 text-xs font-normal text-[#0f241d]"
                   />
                 </label>
@@ -190,7 +202,10 @@ export default function LaboratoryPortalPage() {
                   <input
                     type="date"
                     value={completedTo}
-                    onChange={(e) => setCompletedTo(e.target.value)}
+                    onChange={(e) => {
+                      setCompletedTo(e.target.value);
+                      setPage(1);
+                    }}
                     className="ml-1.5 rounded-xl border border-[#cfe2d6] bg-white px-2.5 py-1.5 text-xs font-normal text-[#0f241d]"
                   />
                 </label>
@@ -200,6 +215,7 @@ export default function LaboratoryPortalPage() {
                     onClick={() => {
                       setCompletedFrom("");
                       setCompletedTo("");
+                      setPage(1);
                     }}
                     className="rounded-xl border border-[#cfe2d6] bg-white px-2.5 py-1.5 text-[11px] font-semibold text-[#466356] hover:bg-emerald-50 cursor-pointer"
                   >
@@ -214,7 +230,10 @@ export default function LaboratoryPortalPage() {
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6c877a]" />
             <input
               value={q}
-              onChange={(e) => setQ(e.target.value)}
+              onChange={(e) => {
+                setQ(e.target.value);
+                setPage(1);
+              }}
               placeholder="Search referral ID or patient..."
               className="w-64 rounded-xl border border-[#cfe2d6] bg-white py-2 pl-9 pr-3 text-xs"
             />
@@ -239,7 +258,7 @@ export default function LaboratoryPortalPage() {
           />
         ) : (
           <div className="space-y-3">
-            {referrals.map((r) => (
+            {paginatedReferrals.map((r) => (
               <div
                 key={r.id}
                 className="flex flex-col md:flex-row md:items-center justify-between gap-4 rounded-2xl border border-[#dcece2] bg-white p-4 hover:border-teal-300 transition-colors"
@@ -296,6 +315,14 @@ export default function LaboratoryPortalPage() {
                 </div>
               </div>
             ))}
+
+            <PaginationBar
+              totalItems={referrals.length}
+              pageSize={DEFAULT_PAGE_SIZE}
+              currentPage={safePage}
+              onPageChange={setPage}
+              itemLabel="lab referral(s)"
+            />
           </div>
         )}
       </SpringCard>

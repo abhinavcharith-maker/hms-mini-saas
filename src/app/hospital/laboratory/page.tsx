@@ -23,6 +23,7 @@ import {
   SpringCard,
   StatusBadge,
 } from "@/components/ui/MotionPrimitives";
+import { DEFAULT_PAGE_SIZE, PaginationBar } from "@/components/ui/PaginationBar";
 import { useToast } from "@/components/providers/AppProviders";
 import { ROLES } from "@/lib/constants";
 import { sanitizeMobileInput } from "@/lib/phone";
@@ -118,6 +119,8 @@ export default function HospitalLaboratoryManagementPage() {
   const [filterSearch, setFilterSearch] = useState("");
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
+  const [historyPage, setHistoryPage] = useState(1);
+  const [catalogPage, setCatalogPage] = useState(1);
   const [detailReferral, setDetailReferral] = useState<LabReferralRow | null>(null);
 
   const [testModalOpen, setTestModalOpen] = useState(false);
@@ -478,6 +481,26 @@ export default function HospitalLaboratoryManagementPage() {
     }
     return true;
   });
+
+  const totalHistoryPages = Math.max(
+    1,
+    Math.ceil(visibleReferrals.length / DEFAULT_PAGE_SIZE)
+  );
+  const safeHistoryPage = Math.min(historyPage, totalHistoryPages);
+  const paginatedReferrals = visibleReferrals.slice(
+    (safeHistoryPage - 1) * DEFAULT_PAGE_SIZE,
+    safeHistoryPage * DEFAULT_PAGE_SIZE
+  );
+
+  const totalCatalogPages = Math.max(
+    1,
+    Math.ceil(catalogFilteredTests.length / DEFAULT_PAGE_SIZE)
+  );
+  const safeCatalogPage = Math.min(catalogPage, totalCatalogPages);
+  const paginatedCatalogTests = catalogFilteredTests.slice(
+    (safeCatalogPage - 1) * DEFAULT_PAGE_SIZE,
+    safeCatalogPage * DEFAULT_PAGE_SIZE
+  );
 
   return (
     <div className="space-y-6">
@@ -851,13 +874,19 @@ export default function HospitalLaboratoryManagementPage() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <input
               value={filterSearch}
-              onChange={(e) => setFilterSearch(e.target.value)}
+              onChange={(e) => {
+                setFilterSearch(e.target.value);
+                setHistoryPage(1);
+              }}
               placeholder="Search ref ID, patient, UHID..."
               className="rounded-xl border border-[#cfe2d6] px-3 py-2 text-xs"
             />
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
+              onChange={(e) => {
+                setFilterStatus(e.target.value);
+                setHistoryPage(1);
+              }}
               className="rounded-xl border border-[#cfe2d6] px-3 py-2 text-xs"
             >
               <option value="">All Statuses</option>
@@ -867,7 +896,10 @@ export default function HospitalLaboratoryManagementPage() {
             </select>
             <select
               value={filterLab}
-              onChange={(e) => setFilterLab(e.target.value)}
+              onChange={(e) => {
+                setFilterLab(e.target.value);
+                setHistoryPage(1);
+              }}
               className="rounded-xl border border-[#cfe2d6] px-3 py-2 text-xs"
             >
               <option value="">All Laboratories</option>
@@ -880,13 +912,19 @@ export default function HospitalLaboratoryManagementPage() {
             <input
               type="date"
               value={filterFrom}
-              onChange={(e) => setFilterFrom(e.target.value)}
+              onChange={(e) => {
+                setFilterFrom(e.target.value);
+                setHistoryPage(1);
+              }}
               className="rounded-xl border border-[#cfe2d6] px-3 py-2 text-xs"
             />
             <input
               type="date"
               value={filterTo}
-              onChange={(e) => setFilterTo(e.target.value)}
+              onChange={(e) => {
+                setFilterTo(e.target.value);
+                setHistoryPage(1);
+              }}
               className="rounded-xl border border-[#cfe2d6] px-3 py-2 text-xs"
             />
           </div>
@@ -905,7 +943,7 @@ export default function HospitalLaboratoryManagementPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#eaf4ee]">
-                {visibleReferrals.map((r) => (
+                {paginatedReferrals.map((r) => (
                   <tr key={r.id} className="hover:bg-[#f7fbf8]">
                     <td className="py-3 pr-3">
                       <p className="font-mono-id font-bold text-[#0d4a38]">
@@ -968,6 +1006,14 @@ export default function HospitalLaboratoryManagementPage() {
               </tbody>
             </table>
           </div>
+
+          <PaginationBar
+            totalItems={visibleReferrals.length}
+            pageSize={DEFAULT_PAGE_SIZE}
+            currentPage={safeHistoryPage}
+            onPageChange={setHistoryPage}
+            itemLabel="lab referral(s)"
+          />
         </SpringCard>
       ) : tab === "catalog" ? (
         <SpringCard className="p-6 space-y-5">
@@ -1001,7 +1047,10 @@ export default function HospitalLaboratoryManagementPage() {
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6c877a]" />
                 <input
                   value={catalogTestSearch}
-                  onChange={(e) => setCatalogTestSearch(e.target.value)}
+                  onChange={(e) => {
+                    setCatalogTestSearch(e.target.value);
+                    setCatalogPage(1);
+                  }}
                   placeholder="Search diagnostic test catalogue..."
                   className="w-full rounded-xl border border-[#cfe2d6] bg-white py-2 pl-9 pr-3 text-sm"
                 />
@@ -1012,40 +1061,50 @@ export default function HospitalLaboratoryManagementPage() {
                   No diagnostic tests matched your search.
                 </p>
               ) : (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {catalogFilteredTests.map((t) => (
-                    <div
-                      key={t.id}
-                      className="flex items-center justify-between gap-3 rounded-2xl border border-[#dcece2] bg-white p-4"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold text-[#0f241d]">{t.name}</p>
-                      </div>
-                      {isAdmin ? (
-                        <div className="flex gap-1 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingTest(t);
-                              setTestForm({ name: t.name });
-                              setTestModalOpen(true);
-                            }}
-                            className="rounded-lg p-1.5 text-[#466356] hover:bg-emerald-50"
-                          >
-                            <Pencil className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteTest(t)}
-                            className="rounded-lg p-1.5 text-rose-600 hover:bg-rose-50"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
+                <>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {paginatedCatalogTests.map((t) => (
+                      <div
+                        key={t.id}
+                        className="flex items-center justify-between gap-3 rounded-2xl border border-[#dcece2] bg-white p-4"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-[#0f241d]">{t.name}</p>
                         </div>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
+                        {isAdmin ? (
+                          <div className="flex gap-1 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingTest(t);
+                                setTestForm({ name: t.name });
+                                setTestModalOpen(true);
+                              }}
+                              className="rounded-lg p-1.5 text-[#466356] hover:bg-emerald-50"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteTest(t)}
+                              className="rounded-lg p-1.5 text-rose-600 hover:bg-rose-50"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+
+                  <PaginationBar
+                    totalItems={catalogFilteredTests.length}
+                    pageSize={DEFAULT_PAGE_SIZE}
+                    currentPage={safeCatalogPage}
+                    onPageChange={setCatalogPage}
+                    itemLabel="lab test(s)"
+                  />
+                </>
               )}
             </div>
           )}

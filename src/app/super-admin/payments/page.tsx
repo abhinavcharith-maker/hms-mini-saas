@@ -352,9 +352,6 @@ export default function SuperAdminPaymentsPage() {
           <h1 className="font-display text-2xl font-extrabold text-[#0f241d]">
             Hospital Payments & Subscriptions
           </h1>
-          <p className="mt-1 text-sm text-[#466356]">
-            Monitor paid hospital timelines, receive payment-limit-crossed alerts without auto-blocking hospitals, extend timelines with collected amounts, and manually deactivate when needed.
-          </p>
         </div>
 
         <BubblyButton

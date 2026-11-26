@@ -15,9 +15,6 @@ export default async function SuperAdminSettingsPage() {
         <h1 className="font-display text-2xl font-extrabold text-[#0f241d]">
           Super Admin Settings
         </h1>
-        <p className="mt-1 text-sm text-[#466356]">
-          Manage platform-wide Gemini AI configuration and administrator credentials.
-        </p>
       </div>
 
       <GeminiApiKeyCard />

@@ -2,9 +2,15 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { PHARMACY_MODE, ROLES } from "@/lib/constants";
 import { requireHospitalAuth } from "@/lib/auth";
-import { getLocalDayAndMonthBounds, parseSafeTzOffset } from "@/lib/datetime";
+import {
+  getLocalDayAndMonthBounds,
+  parseDateRangeBounds,
+  parseSafeTzOffset,
+} from "@/lib/datetime";
 import { getBatchExpiryStatus } from "@/lib/pharmacy-utils";
 import { ApiError, handleApiError } from "@/lib/api-utils";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export async function GET(request: Request) {
   try {
@@ -31,6 +37,34 @@ export async function GET(request: Request) {
       parseSafeTzOffset(searchParams.get("tzOffset"), 0) ?? 0;
     const { todayStart, todayEnd } = getLocalDayAndMonthBounds(tzOffsetMinutes);
 
+    // Submitted history range: "today" (default) | "yesterday" | "3d" | "7d" | "custom"
+    const historyRange = (searchParams.get("historyRange") ?? "today").trim();
+    const historyDate = (searchParams.get("historyDate") ?? "").trim();
+
+    let histStart = todayStart;
+    let histEnd = todayEnd;
+
+    if (historyRange === "yesterday") {
+      histStart = new Date(todayStart.getTime() - DAY_MS);
+      histEnd = new Date(todayStart.getTime() - 1);
+    } else if (historyRange === "3d") {
+      histStart = new Date(todayStart.getTime() - 2 * DAY_MS);
+      histEnd = todayEnd;
+    } else if (historyRange === "7d") {
+      histStart = new Date(todayStart.getTime() - 6 * DAY_MS);
+      histEnd = todayEnd;
+    } else if (historyRange === "custom" && /^\d{4}-\d{2}-\d{2}$/.test(historyDate)) {
+      const bounds = parseDateRangeBounds({
+        from: historyDate,
+        to: historyDate,
+        tzOffsetMinutes,
+      });
+      if (bounds.gte && bounds.lte) {
+        histStart = bounds.gte;
+        histEnd = bounds.lte;
+      }
+    }
+
     // Doctor is strictly locked to their own patients; Admin may filter by doctorId or view all
     const requestedDoctorId = searchParams.get("doctorId")?.trim() || null;
     const filterDoctorId = isDoctor
@@ -41,9 +75,43 @@ export async function GET(request: Request) {
 
     const pharmacyMode = session.hospital.pharmacyMode;
 
+    const visitInclude = {
+      patient: {
+        select: {
+          id: true,
+          uhid: true,
+          fullName: true,
+          age: true,
+          gender: true,
+          phone: true,
+        },
+      },
+      doctor: {
+        select: {
+          id: true,
+          name: true,
+          specialty: true,
+          qualification: true,
+        },
+      },
+      doctorPrescriptions: {
+        orderBy: { prescribedAt: "desc" as const },
+        include: { items: true },
+      },
+      pharmacyReferrals: {
+        orderBy: { referredAt: "desc" as const },
+        include: { items: true },
+      },
+      labReferrals: {
+        orderBy: { referredAt: "desc" as const },
+        include: { items: true },
+      },
+    };
+
     const [
       doctors,
       todayVisits,
+      submittedVisits,
       labTestCatalog,
       labAccounts,
       pharmacyMedicinesRaw,
@@ -67,38 +135,33 @@ export async function GET(request: Request) {
           ...(filterDoctorId ? { doctorId: filterDoctorId } : {}),
         },
         orderBy: [{ visitDate: "desc" }, { createdAt: "desc" }],
-        include: {
-          patient: {
-            select: {
-              id: true,
-              uhid: true,
-              fullName: true,
-              age: true,
-              gender: true,
-              phone: true,
+        include: visitInclude,
+      }),
+      prisma.opVisit.findMany({
+        where: {
+          hospitalId,
+          ...(filterDoctorId ? { doctorId: filterDoctorId } : {}),
+          OR: [
+            {
+              consultancyCompletedAt: { gte: histStart, lte: histEnd },
             },
-          },
-          doctor: {
-            select: {
-              id: true,
-              name: true,
-              specialty: true,
-              qualification: true,
+            {
+              consultancyCompletedAt: null,
+              visitDate: { gte: histStart, lte: histEnd },
+              OR: [
+                { doctorPrescriptions: { some: {} } },
+                { pharmacyReferrals: { some: {} } },
+                { labReferrals: { some: {} } },
+              ],
             },
-          },
-          doctorPrescriptions: {
-            orderBy: { prescribedAt: "desc" },
-            include: { items: true },
-          },
-          pharmacyReferrals: {
-            orderBy: { referredAt: "desc" },
-            include: { items: true },
-          },
-          labReferrals: {
-            orderBy: { referredAt: "desc" },
-            include: { items: true },
-          },
+          ],
         },
+        orderBy: [
+          { consultancyCompletedAt: "desc" },
+          { visitDate: "desc" },
+          { createdAt: "desc" },
+        ],
+        include: visitInclude,
       }),
       prisma.labTestCatalog.findMany({
         where: { hospitalId, isActive: true },
@@ -161,6 +224,8 @@ export async function GET(request: Request) {
         : Promise.resolve([]),
     ]);
 
+    const pendingVisits = todayVisits.filter((v) => !v.consultancyCompletedAt);
+
     const now = new Date();
     const pharmacyMedicines = pharmacyMedicinesRaw.map((m) => {
       const validUnits = m.batches.reduce(
@@ -185,6 +250,8 @@ export async function GET(request: Request) {
       currentDoctor: session.doctor,
       doctors,
       todayVisits,
+      pendingVisits,
+      submittedVisits,
       pharmacyMedicines,
       medicineCatalog,
       pharmacyAccounts,

@@ -608,6 +608,12 @@ export const createPharmacySaleSchema = z.object({
           .refine((v) => Number.isInteger(v) && v >= 1 && v <= 100_000, {
             message: "Quantity must be a positive whole number",
           }),
+        dosageSchedule: optionalTrimmedString(30),
+        mealTiming: z
+          .enum(["AFTER_MEAL", "BEFORE_MEAL"])
+          .optional()
+          .nullable(),
+        dosageInstructions: optionalTrimmedString(300),
       })
     )
     .min(1, "Add at least one medicine to the cart before completing sale"),
@@ -629,6 +635,11 @@ export const consultancyPrescribeSchema = z.object({
           .refine((v) => Number.isInteger(v) && v >= 1 && v <= 100_000, {
             message: "Quantity must be a whole number of at least 1 unit",
           }),
+        dosageSchedule: optionalTrimmedString(30),
+        mealTiming: z
+          .enum(["AFTER_MEAL", "BEFORE_MEAL"])
+          .optional()
+          .nullable(),
         dosageInstructions: optionalTrimmedString(300),
       })
     )
@@ -647,4 +658,41 @@ export const consultancyLabReferSchema = z.object({
       })
     )
     .min(1, "Add at least one laboratory test to refer"),
+});
+
+export const consultancyCompleteSchema = z.object({
+  opVisitId: z.string().trim().min(1, "OP consultation visit is required"),
+  pharmacyAccountId: optionalTrimmedString(64),
+  medNotes: optionalTrimmedString(1000),
+  medicines: z
+    .array(
+      z.object({
+        pharmacyMedicineId: optionalTrimmedString(64),
+        medicineCatalogId: optionalTrimmedString(64),
+        medicineName: z.string().trim().min(1, "Medicine name is required").max(180),
+        quantityUnits: z
+          .union([z.number(), z.string()])
+          .transform((v) => Number(v))
+          .refine((v) => Number.isInteger(v) && v >= 1 && v <= 100_000, {
+            message: "Quantity must be a whole number of at least 1 unit",
+          }),
+        dosageSchedule: optionalTrimmedString(30),
+        mealTiming: z
+          .enum(["AFTER_MEAL", "BEFORE_MEAL"])
+          .optional()
+          .nullable(),
+        dosageInstructions: optionalTrimmedString(300),
+      })
+    )
+    .default([]),
+  labAccountId: optionalTrimmedString(64),
+  labNotes: optionalTrimmedString(1000),
+  labTests: z
+    .array(
+      z.object({
+        labTestCatalogId: optionalTrimmedString(64),
+        testName: z.string().trim().min(1, "Laboratory test name is required").max(180),
+      })
+    )
+    .default([]),
 });

@@ -68,7 +68,12 @@ function getSortedValidBatches(med: PharmacyMedicineItem): PharmacyBatchItem[] {
 function allocateFefoCartItems(
   med: PharmacyMedicineItem,
   unitsToAllocate: number,
-  reservedByBatch: Map<string, number>
+  reservedByBatch: Map<string, number>,
+  dosageMeta?: {
+    dosageSchedule?: string | null;
+    mealTiming?: "AFTER_MEAL" | "BEFORE_MEAL" | null;
+    dosageInstructions?: string | null;
+  }
 ): { items: CartItem[]; allocated: number } {
   const validBatches = getSortedValidBatches(med);
   const created: CartItem[] = [];
@@ -102,6 +107,9 @@ function allocateFefoCartItems(
       sheetSellingPrice: med.sheetSellingPrice,
       gstPercent: med.gstPercent,
       maxBatchUnits: batch.quantityUnits,
+      dosageSchedule: dosageMeta?.dosageSchedule ?? null,
+      mealTiming: dosageMeta?.mealTiming ?? null,
+      dosageInstructions: dosageMeta?.dosageInstructions ?? null,
     });
   }
 
@@ -235,7 +243,12 @@ export function PharmacyPrescriptionsButton({
       const { items: allocatedItems } = allocateFefoCartItems(
         med,
         item.quantityUnits,
-        reserved
+        reserved,
+        {
+          dosageSchedule: item.dosageSchedule ?? null,
+          mealTiming: item.mealTiming ?? null,
+          dosageInstructions: item.dosageInstructions ?? null,
+        }
       );
       nextPrepared.push(...allocatedItems);
     }
@@ -248,6 +261,7 @@ export function PharmacyPrescriptionsButton({
     const {
       prescription,
       medicine,
+      item,
       availableUnits,
       remainingItems,
       alreadyPreparedCartItems,
@@ -263,7 +277,12 @@ export function PharmacyPrescriptionsButton({
     const { items: allocatedItems } = allocateFefoCartItems(
       medicine,
       availableUnits,
-      reserved
+      reserved,
+      {
+        dosageSchedule: item.dosageSchedule ?? null,
+        mealTiming: item.mealTiming ?? null,
+        dosageInstructions: item.dosageInstructions ?? null,
+      }
     );
     const updatedPrepared = [...alreadyPreparedCartItems, ...allocatedItems];
     setShortagePrompt(null);

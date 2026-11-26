@@ -43,7 +43,6 @@ export async function GET(request: Request) {
       },
       orderBy: { referredAt: "desc" },
       include: { items: true },
-      take: 150,
     });
 
     return NextResponse.json({ referrals });

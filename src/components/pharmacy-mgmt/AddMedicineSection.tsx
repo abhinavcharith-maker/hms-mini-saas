@@ -11,6 +11,7 @@ import {
   Hash,
   IndianRupee,
   Layers,
+  Loader2,
   MapPin,
   Package,
   Percent,
@@ -20,11 +21,12 @@ import {
   ShieldAlert,
   ShieldCheck,
   Tag,
+  Upload,
 } from "lucide-react";
 import { BubblyButton, SpringCard } from "@/components/ui/MotionPrimitives";
 import { useToast } from "@/components/providers/AppProviders";
 import { ExpiryMonthYearInput } from "./ExpiryMonthYearInput";
-import type { PackagingType, PharmacyMedicineItem } from "./types";
+import type { BillScanQuota, PackagingType, PharmacyMedicineItem } from "./types";
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -38,14 +40,28 @@ function formatPriceInput(n: number): string {
 export function AddMedicineSection({
   existingMedicines,
   isActive = true,
+  billQuota = null,
+  uploadingBill = false,
+  onUploadBillFile,
   onSaved,
 }: {
   existingMedicines: PharmacyMedicineItem[];
   isActive?: boolean;
+  billQuota?: BillScanQuota | null;
+  uploadingBill?: boolean;
+  onUploadBillFile?: (file: File) => Promise<void> | void;
   onSaved: () => Promise<void> | void;
 }) {
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
+  const billFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleBillFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !onUploadBillFile) return;
+    void onUploadBillFile(file);
+  };
 
   const [selectedExistingId, setSelectedExistingId] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -343,15 +359,55 @@ export function AddMedicineSection({
             </div>
           </div>
 
-          <BubblyButton
-            type="button"
-            variant="outline"
-            onClick={resetForm}
-            className="px-3 py-1.5 text-xs"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            Reset
-          </BubblyButton>
+          <div className="flex flex-wrap items-center gap-2">
+            {onUploadBillFile ? (
+              <>
+                <input
+                  ref={billFileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  onChange={handleBillFileSelected}
+                  className="hidden"
+                />
+                <BubblyButton
+                  type="button"
+                  disabled={
+                    uploadingBill ||
+                    (billQuota !== null && billQuota.remaining <= 0)
+                  }
+                  onClick={() => billFileInputRef.current?.click()}
+                  className="px-3.5 py-1.5 text-xs"
+                >
+                  {uploadingBill ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Analyzing Bill...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-3.5 w-3.5" />
+                      Upload Bill
+                      {billQuota ? (
+                        <span className="ml-1 rounded-full bg-white/20 px-2 py-0.5 font-mono-id text-[10px]">
+                          {billQuota.remaining}/{billQuota.limit} left
+                        </span>
+                      ) : null}
+                    </>
+                  )}
+                </BubblyButton>
+              </>
+            ) : null}
+
+            <BubblyButton
+              type="button"
+              variant="outline"
+              onClick={resetForm}
+              className="px-3 py-1.5 text-xs"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Reset
+            </BubblyButton>
+          </div>
         </div>
 
         {/* Row 1: Medicine Name -> Placement */}

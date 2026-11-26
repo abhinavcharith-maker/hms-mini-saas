@@ -149,9 +149,6 @@ export default function HospitalSettingsPage() {
           <h1 className="font-display text-2xl font-extrabold text-[#0f241d]">
             Receptionist Settings
           </h1>
-          <p className="mt-1 text-sm text-[#466356]">
-            View your assigned account profile and securely update your password.
-          </p>
         </div>
 
         <ChangePasswordCard
@@ -172,9 +169,6 @@ export default function HospitalSettingsPage() {
           <h1 className="font-display text-2xl font-extrabold text-[#0f241d]">
             Hospital Settings & Security
           </h1>
-          <p className="mt-1 text-sm text-[#466356]">
-            Maintain hospital branding for printed documents and manage your administrator password.
-          </p>
         </div>
 
         <Link

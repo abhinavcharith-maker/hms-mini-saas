@@ -635,6 +635,9 @@ export function SellMedicineSection({
             batchId: c.batchId,
             sellMode: c.sellMode,
             quantity: c.quantity,
+            dosageSchedule: c.dosageSchedule ?? null,
+            mealTiming: c.mealTiming ?? null,
+            dosageInstructions: c.dosageInstructions ?? null,
           })),
         }),
       });
@@ -1748,6 +1751,17 @@ export function SellMedicineSection({
                             <Printer className="h-3.5 w-3.5" />
                             Receipt
                           </a>
+                          {s.prescriptionId ? (
+                            <a
+                              href={`/print/pharmacy-dosage/${encodeURIComponent(s.id)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 rounded-xl border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 text-[11px] font-semibold text-emerald-900 hover:bg-emerald-100"
+                            >
+                              <Pill className="h-3.5 w-3.5" />
+                              Dosage Slip
+                            </a>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
@@ -1928,6 +1942,17 @@ export function SellMedicineSection({
                 <Printer className="h-4 w-4" />
                 Print Receipt
               </a>
+              {completedSale.prescriptionId ? (
+                <a
+                  href={`/print/pharmacy-dosage/${encodeURIComponent(completedSale.id)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-400 bg-[#e6f6ed] px-5 py-2.5 text-sm font-semibold text-[#0d4a38] shadow-xs hover:bg-[#d5f0e2]"
+                >
+                  <Pill className="h-4 w-4" />
+                  Print Dosage Slip
+                </a>
+              ) : null}
               <BubblyButton
                 variant="outline"
                 onClick={() => {
@@ -1978,6 +2003,11 @@ export function SellMedicineSection({
                       {it.enteredQuantity} {it.sellMode === "SHEET" ? "sh" : "u"} (
                       {it.basicUnitsDeducted} units) · GST {it.gstPercentSnapshot}%
                     </p>
+                    {it.dosageInstructionsSnapshot ? (
+                      <p className="mt-0.5 text-[11px] font-semibold text-emerald-800">
+                        Usage: {it.dosageInstructionsSnapshot}
+                      </p>
+                    ) : null}
                   </div>
                   <span className="font-mono-id font-bold text-[#0d4a38]">
                     ₹{it.lineTotal.toFixed(2)}
@@ -2006,6 +2036,17 @@ export function SellMedicineSection({
                 <Printer className="h-3.5 w-3.5" />
                 Print Receipt
               </a>
+              {inspectSale.prescriptionId ? (
+                <a
+                  href={`/print/pharmacy-dosage/${encodeURIComponent(inspectSale.id)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl border border-emerald-400 bg-[#e6f6ed] px-4 py-2 text-xs font-semibold text-[#0d4a38] hover:bg-[#d5f0e2]"
+                >
+                  <Pill className="h-3.5 w-3.5" />
+                  Print Dosage Slip
+                </a>
+              ) : null}
             </div>
           </div>
         ) : null}

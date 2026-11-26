@@ -97,6 +97,9 @@ export interface CartItem {
   sheetSellingPrice: number;
   gstPercent: number;
   maxBatchUnits: number;
+  dosageSchedule?: string | null;
+  mealTiming?: "AFTER_MEAL" | "BEFORE_MEAL" | null;
+  dosageInstructions?: string | null;
 }
 
 export interface PharmacySaleItemRecord {
@@ -116,6 +119,9 @@ export interface PharmacySaleItemRecord {
   subtotal: number;
   gstAmount: number;
   lineTotal: number;
+  dosageScheduleSnapshot?: string | null;
+  mealTimingSnapshot?: string | null;
+  dosageInstructionsSnapshot?: string | null;
 }
 
 export interface PharmacySaleRecord {
@@ -131,6 +137,7 @@ export interface PharmacySaleRecord {
   totalAmount: number;
   totalUnitsSold: number;
   paymentMode: string;
+  prescriptionId?: string | null;
   soldByNameSnapshot: string;
   soldAt: string;
   items: PharmacySaleItemRecord[];
@@ -222,6 +229,8 @@ export interface DoctorPrescriptionItemRecord {
   pharmacyMedicineId: string | null;
   medicineNameSnapshot: string;
   quantityUnits: number;
+  dosageSchedule?: string | null;
+  mealTiming?: "AFTER_MEAL" | "BEFORE_MEAL" | null;
   dosageInstructions: string | null;
 }
 

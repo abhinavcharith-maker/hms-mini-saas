@@ -120,9 +120,6 @@ export default function HospitalRecentChangesPage() {
         <h1 className="font-display text-2xl font-extrabold text-[#0f241d]">
           Recent Changes
         </h1>
-        <p className="mt-1 text-sm text-[#466356]">
-          Hospital operational history — automatically retains only the 100 most recent changes.
-        </p>
       </div>
 
       <SpringCard className="p-6 space-y-5">

@@ -351,6 +351,9 @@ export function PharmacyManagementWorkspace() {
             <AddMedicineSection
               existingMedicines={medicines}
               isActive={tab === "add"}
+              billQuota={billQuota}
+              uploadingBill={uploadingBill}
+              onUploadBillFile={handleUploadBillFile}
               onSaved={handleInventoryMutated}
             />
           </div>

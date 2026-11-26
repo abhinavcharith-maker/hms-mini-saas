@@ -16,9 +16,6 @@ export default async function DoctorSettingsPage() {
         <h1 className="font-display text-2xl font-extrabold text-[#0f241d]">
           Doctor Account Settings
         </h1>
-        <p className="mt-1 text-sm text-[#466356]">
-          View your consulting doctor profile and update your account password.
-        </p>
       </div>
 
       <ChangePasswordCard

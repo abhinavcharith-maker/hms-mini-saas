@@ -187,10 +187,12 @@ model OpVisit {
   registrationFee    Float?
   totalAmount        Float?
   paymentMode        String?
-  paymentStatus      String?
-  createdByUserId    String?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+  paymentStatus                String?
+  createdByUserId              String?
+  consultancyCompletedAt       DateTime?
+  consultancyCompletedByUserId String?
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
 
   hospital            Hospital             @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
   patient             Patient              @relation(fields: [patientId], references: [id], onDelete: Cascade)
@@ -711,6 +713,7 @@ model PharmacySale {
   totalAmount                 Float
   totalUnitsSold              Int      @default(0)
   paymentMode                 String   @default("CASH")
+  prescriptionId              String?
   soldByUserId                String?
   soldByNameSnapshot          String
   soldAt                      DateTime @default(now())
@@ -742,9 +745,12 @@ model PharmacySaleItem {
   basicUnitsDeducted    Int
   unitPriceSnapshot     Float
   gstPercentSnapshot    Float   @default(0)
-  subtotal              Float
-  gstAmount             Float   @default(0)
-  lineTotal             Float
+  subtotal                   Float
+  gstAmount                  Float   @default(0)
+  lineTotal                  Float
+  dosageScheduleSnapshot     String?
+  mealTimingSnapshot         String?
+  dosageInstructionsSnapshot String?
 
   hospital Hospital     @relation(fields: [hospitalId], references: [id], onDelete: Cascade)
   sale     PharmacySale @relation(fields: [saleId], references: [id], onDelete: Cascade)
@@ -849,6 +855,8 @@ model DoctorPrescriptionItem {
   pharmacyMedicineId   String?
   medicineNameSnapshot String
   quantityUnits        Int
+  dosageSchedule       String? // e.g. "1-0-1" (Morning-Afternoon-Evening)
+  mealTiming           String? // AFTER_MEAL | BEFORE_MEAL
   dosageInstructions   String?
 
   hospital         Hospital           @relation(fields: [hospitalId], references: [id], onDelete: Cascade)

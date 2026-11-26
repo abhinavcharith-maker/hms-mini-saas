@@ -129,9 +129,6 @@ export default function HospitalReportsPage() {
           <h1 className="font-display text-2xl font-extrabold text-[#0f241d]">
             Hospital Reports & Analytics
           </h1>
-          <p className="mt-1 text-sm text-[#466356]">
-            Date-filtered OP, IP occupancy, and external pharmacy & laboratory referral statistics.
-          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

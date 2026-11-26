@@ -2690,6 +2690,164 @@ async function run() {
 
   console.log(`✓ Step 21: Zero-duplicate batch restock with editable expiry update & All-Patients Timeline PDF export (${exportedCount} patients, ${allPtsBuf.byteLength} bytes) verified`);
 
+  // 22. Structured M-A-E Dosage Schedule + Meal Timing -> Prescribed Sale Dosage Slip Snapshots (Excluded on Walk-in Sales) + Cross-Tenant Non-Overlap Audit
+  const drMeeraRelogin = new CookieClient();
+  assert.equal(
+    (
+      await drMeeraRelogin.req("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify({
+          username: "dr_meera_apex",
+          password: "DoctorNewPass!99",
+          portalRole: "DOCTOR",
+        }),
+      })
+    ).status,
+    200
+  );
+
+  // Doctor prescribes with structured 1-0-1 + BEFORE_MEAL timing
+  const structuredRxRes = await drMeeraRelogin.req("/api/consultancy/prescribe", {
+    method: "POST",
+    body: JSON.stringify({
+      opVisitId: meeraVisitId,
+      items: [
+        {
+          pharmacyMedicineId: paraMedId,
+          medicineName: "Paracetamol 500mg",
+          quantityUnits: 4,
+          dosageSchedule: "1-0-1",
+          mealTiming: "BEFORE_MEAL",
+        },
+      ],
+    }),
+  });
+  assert.equal(structuredRxRes.status, 201);
+  const structuredRx = (
+    structuredRxRes.json as {
+      prescription: {
+        id: string;
+        items: Array<{
+          dosageSchedule: string | null;
+          mealTiming: string | null;
+          dosageInstructions: string | null;
+        }>;
+      };
+    }
+  ).prescription;
+  assert.equal(structuredRx.items[0]?.dosageSchedule, "1-0-1");
+  assert.equal(structuredRx.items[0]?.mealTiming, "BEFORE_MEAL");
+  assert.equal(structuredRx.items[0]?.dosageInstructions, "1-0-1 · Before Meal");
+
+  // Pharmacy completes sale from Doctor Prescription -> carries prescriptionId & dosage snapshots for Dosage Slip!
+  const prescribedSaleRes = await apexPharm.req("/api/pharmacy-mgmt/sales", {
+    method: "POST",
+    body: JSON.stringify({
+      patientName: "Aarav Sharma",
+      patientPhone: "9849777888",
+      doctorId: meeraDoc.id,
+      doctorName: "Dr. Meera Iyer",
+      paymentMode: "CASH",
+      prescriptionId: structuredRx.id,
+      items: [
+        {
+          medicineId: paraMedId,
+          batchId: paraEarlyBatchId,
+          sellMode: "UNIT",
+          quantity: 4,
+          dosageSchedule: "1-0-1",
+          mealTiming: "BEFORE_MEAL",
+          dosageInstructions: "1-0-1 · Before Meal",
+        },
+      ],
+    }),
+  });
+  assert.equal(prescribedSaleRes.status, 201);
+  const prescribedSale = (
+    prescribedSaleRes.json as {
+      sale: {
+        id: string;
+        prescriptionId: string | null;
+        items: Array<{
+          dosageScheduleSnapshot: string | null;
+          mealTimingSnapshot: string | null;
+          dosageInstructionsSnapshot: string | null;
+        }>;
+      };
+    }
+  ).sale;
+  assert.equal(prescribedSale.prescriptionId, structuredRx.id);
+  assert.equal(prescribedSale.items[0]?.dosageScheduleSnapshot, "1-0-1");
+  assert.equal(prescribedSale.items[0]?.mealTimingSnapshot, "BEFORE_MEAL");
+
+  // Walk-in sale (no prescriptionId) MUST NOT produce a prescriptionId or dosage slip snapshots even if dosage fields are sent
+  const walkinSaleRes = await apexPharm.req("/api/pharmacy-mgmt/sales", {
+    method: "POST",
+    body: JSON.stringify({
+      patientName: "Walkin Guest",
+      patientPhone: "9849000999",
+      doctorId: meeraDoc.id,
+      doctorName: "Dr. Meera Iyer",
+      paymentMode: "CASH",
+      items: [
+        {
+          medicineId: paraMedId,
+          batchId: paraEarlyBatchId,
+          sellMode: "UNIT",
+          quantity: 1,
+          dosageSchedule: "1-0-1",
+          mealTiming: "AFTER_MEAL",
+        },
+      ],
+    }),
+  });
+  assert.equal(walkinSaleRes.status, 201);
+  const walkinSale = (
+    walkinSaleRes.json as {
+      sale: {
+        prescriptionId: string | null;
+        items: Array<{ dosageScheduleSnapshot: string | null }>;
+      };
+    }
+  ).sale;
+  assert.equal(walkinSale.prescriptionId, null);
+  assert.equal(walkinSale.items[0]?.dosageScheduleSnapshot, null);
+
+  // Strict Cross-Tenant Isolation & Non-Overlap Verification:
+  // Snapshot Hospital A patient count before toggling Hospital C's settings
+  const hospAPtsBefore = (await hospAdminA.req("/api/hospital/patients")).json as {
+    patients: Array<{ id: string }>;
+  };
+  // Hospital C Admin CANNOT access Hospital A's patients, Hospital A Admin CANNOT access Hospital C's sales, neither can access Super Admin
+  assert.equal((await hospAdminA.req(`/api/pharmacy-mgmt/sales/${prescribedSale.id}`)).status, 403);
+  assert.equal((await hospAdminC.req("/api/super-admin/hospitals")).status, 403);
+  assert.equal((await hospAdminA.req("/api/super-admin/dashboard")).status, 403);
+  // Toggling Hospital C's consultancyEnabled OFF & back ON leaves Hospital A completely untouched!
+  assert.equal(
+    (
+      await superAdmin.req(`/api/super-admin/hospitals/${hospCId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ consultancyEnabled: false }),
+      })
+    ).status,
+    200
+  );
+  const hospAPtsAfter = (await hospAdminA.req("/api/hospital/patients")).json as {
+    patients: Array<{ id: string }>;
+  };
+  assert.equal(hospAPtsAfter.patients.length, hospAPtsBefore.patients.length);
+  assert.equal(
+    (
+      await superAdmin.req(`/api/super-admin/hospitals/${hospCId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ consultancyEnabled: true }),
+      })
+    ).status,
+    200
+  );
+
+  console.log("✓ Step 22: M-A-E dosage schedule + After/Before Meal -> Prescribed-only Dosage Slip snapshots & cross-tenant database non-overlap verified");
+
   console.log("\nALL E2E VERIFICATION ASSERTIONS PASSED SUCCESSFULLY!");
 }
 

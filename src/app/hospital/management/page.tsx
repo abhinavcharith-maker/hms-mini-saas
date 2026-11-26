@@ -468,9 +468,6 @@ export default function HospitalManagementPage() {
           <h1 className="font-display text-2xl font-extrabold text-[#0f241d]">
             Management
           </h1>
-          <p className="mt-1 text-sm text-[#466356]">
-            Manage consulting doctors, receptionist accounts, pharmacy owners, and laboratory owners — including details and usernames.
-          </p>
         </div>
       </div>
 

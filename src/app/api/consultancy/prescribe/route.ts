@@ -54,6 +54,21 @@ export async function POST(request: Request) {
     const doctorQualification =
       visit.doctor?.qualification ?? session.doctor?.qualification ?? null;
 
+    const formatCombinedDosage = (item: {
+      dosageSchedule?: string | null;
+      mealTiming?: "AFTER_MEAL" | "BEFORE_MEAL" | null;
+      dosageInstructions?: string | null;
+    }) => {
+      if (item.dosageInstructions && item.dosageInstructions.trim().length > 0) {
+        return item.dosageInstructions.trim();
+      }
+      const parts: string[] = [];
+      if (item.dosageSchedule) parts.push(item.dosageSchedule);
+      if (item.mealTiming === "AFTER_MEAL") parts.push("After Meal");
+      else if (item.mealTiming === "BEFORE_MEAL") parts.push("Before Meal");
+      return parts.length > 0 ? parts.join(" · ") : null;
+    };
+
     if (session.hospital.pharmacyMode === PHARMACY_MODE.MANAGEMENT) {
       // Pharmacy Management Mode: create DoctorPrescription (no batch selection; Pharmacy auto-picks earliest expiry FEFO!)
       const existingMeds = await prisma.pharmacyMedicine.findMany({
@@ -91,7 +106,9 @@ export async function POST(request: Request) {
                   pharmacyMedicineId: matched?.id ?? null,
                   medicineNameSnapshot: matched?.name ?? it.medicineName.trim(),
                   quantityUnits: it.quantityUnits,
-                  dosageInstructions: it.dosageInstructions ?? null,
+                  dosageSchedule: it.dosageSchedule ?? null,
+                  mealTiming: it.mealTiming ?? null,
+                  dosageInstructions: formatCombinedDosage(it),
                 };
               }),
             },
@@ -206,7 +223,7 @@ export async function POST(request: Request) {
           quantity: item.quantityUnits,
           unitPriceSnapshot: unitPrice,
           lineTotal,
-          dosageInstructions: item.dosageInstructions ?? null,
+          dosageInstructions: formatCombinedDosage(item),
         });
       }
 

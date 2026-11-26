@@ -426,9 +426,6 @@ export default function IpManagementPage() {
           <h1 className="font-display text-2xl font-extrabold text-[#0f241d]">
             IP Admissions & Bed Management
           </h1>
-          <p className="mt-1 text-sm text-[#466356]">
-            Transaction-safe bed occupancy, ward transfers & automatic bed release upon discharge.
-          </p>
         </div>
 
         <div className="flex flex-wrap gap-2.5">

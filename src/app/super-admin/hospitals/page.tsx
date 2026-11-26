@@ -581,9 +581,6 @@ export default function SuperAdminHospitalsPage() {
           <h1 className="font-display text-2xl font-extrabold text-[#0f241d]">
             Hospital Accounts & Tenants
           </h1>
-          <p className="mt-1 text-sm text-[#466356]">
-            Provision isolated hospital environments, monitor daily OP limits, inspect patient volume & control tenant status.
-          </p>
         </div>
 
         <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 shrink-0">

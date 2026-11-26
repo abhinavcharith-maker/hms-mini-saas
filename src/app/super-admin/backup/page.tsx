@@ -244,9 +244,6 @@ export default function SuperAdminBackupPage() {
         <h1 className="font-display text-2xl font-extrabold text-[#0f241d]">
           Backup & Restore Center
         </h1>
-        <p className="mt-1 text-sm text-[#466356]">
-          Download verified JSON backups and execute transaction-safe hospital restores or tenant imports.
-        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

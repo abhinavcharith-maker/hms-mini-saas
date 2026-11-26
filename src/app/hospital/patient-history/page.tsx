@@ -238,9 +238,6 @@ export default function HospitalPatientHistoryPage() {
           <h1 className="font-display text-2xl font-extrabold text-[#0f241d]">
             Patient History
           </h1>
-          <p className="mt-1 text-sm text-[#466356]">
-            Filter by patient or timeline date &amp; time range and inspect full medical and referral records.
-          </p>
         </div>
 
         <motion.button

@@ -16,9 +16,6 @@ export default async function PharmacySettingsPage() {
         <h1 className="font-display text-2xl font-extrabold text-[#0f241d]">
           Pharmacy Account Settings
         </h1>
-        <p className="mt-1 text-sm text-[#466356]">
-          View your assigned external pharmacy profile and update your password.
-        </p>
       </div>
 
       <ChangePasswordCard

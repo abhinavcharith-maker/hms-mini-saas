@@ -123,7 +123,22 @@ export async function POST(request: Request) {
         subtotal: number;
         gstAmount: number;
         lineTotal: number;
+        dosageScheduleSnapshot: string | null;
+        mealTimingSnapshot: string | null;
+        dosageInstructionsSnapshot: string | null;
       }> = [];
+
+      // Verify prescriptionId belongs strictly to this hospital (tenant-safe)
+      let verifiedPrescriptionId: string | null = null;
+      if (input.prescriptionId) {
+        const ownedRx = await tx.doctorPrescription.findFirst({
+          where: { id: input.prescriptionId, hospitalId },
+          select: { id: true },
+        });
+        if (ownedRx) {
+          verifiedPrescriptionId = ownedRx.id;
+        }
+      }
 
       let grandSubtotal = 0;
       let grandGst = 0;
@@ -233,6 +248,15 @@ export async function POST(request: Request) {
           subtotal: lineSubtotal,
           gstAmount: lineGst,
           lineTotal,
+          dosageScheduleSnapshot: verifiedPrescriptionId
+            ? reqItem.dosageSchedule ?? null
+            : null,
+          mealTimingSnapshot: verifiedPrescriptionId
+            ? reqItem.mealTiming ?? null
+            : null,
+          dosageInstructionsSnapshot: verifiedPrescriptionId
+            ? reqItem.dosageInstructions ?? null
+            : null,
         });
 
         await tx.pharmacyStockLog.create({
@@ -266,6 +290,7 @@ export async function POST(request: Request) {
           totalAmount: grandTotal,
           totalUnitsSold,
           paymentMode: input.paymentMode,
+          prescriptionId: verifiedPrescriptionId,
           soldByUserId: session.user.id,
           soldByNameSnapshot: session.user.fullName,
           soldAt: now,
@@ -278,10 +303,10 @@ export async function POST(request: Request) {
         },
       });
 
-      if (input.prescriptionId) {
+      if (verifiedPrescriptionId) {
         await tx.doctorPrescription.updateMany({
           where: {
-            id: input.prescriptionId,
+            id: verifiedPrescriptionId,
             hospitalId,
             status: "PENDING",
           },

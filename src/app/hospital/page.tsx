@@ -165,9 +165,6 @@ export default function HospitalDashboardPage() {
           <h1 className="font-display text-2xl font-extrabold text-[#0f241d]">
             Hospital Command Dashboard
           </h1>
-          <p className="mt-1 text-sm text-[#466356]">
-            Live overview of OP visits, inpatient bed availability & external partner referrals.
-          </p>
         </div>
         <div className="flex flex-wrap gap-2.5">
           <Link
